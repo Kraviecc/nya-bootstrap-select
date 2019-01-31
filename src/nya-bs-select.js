@@ -270,14 +270,6 @@ nyaBsSelect.directive('nyaBsSelect', ['$parse', '$document', '$timeout', '$compi
             }
 
             if(isMultiple) {
-              for(index = 0; index < modelValue.length; index++) {
-                if(!contains(valuesForSelect, modelValue[index])) {
-                  modelValueChanged = true;
-                  modelValue.splice(index, 1);
-                  index--;
-                }
-              }
-
               if(modelValueChanged) {
                 // modelValue changed.
 
@@ -285,7 +277,6 @@ nyaBsSelect.directive('nyaBsSelect', ['$parse', '$document', '$timeout', '$compi
 
                 updateButtonContent();
               }
-
             } else {
               if(!contains(valuesForSelect, modelValue)) {
                 modelValue = valuesForSelect[0];
@@ -920,121 +911,133 @@ nyaBsSelect.directive('nyaBsSelect', ['$parse', '$document', '$timeout', '$compi
 
           var filterOption = jqLite(dropdownToggle[0].querySelector('.filter-option'));
           var specialTitle = jqLite(dropdownToggle[0].querySelector('.special-title'));
-          if(typeof viewValue === 'undefined' || viewValue === null) {
-            /**
-             * Select empty option when model is undefined.
-             */
-            dropdownToggle.addClass('show-special-title');
-            filterOption.empty();
-            return;
+          if (typeof viewValue === 'undefined' || viewValue === null) {
+              /**
+               * Select empty option when model is undefined.
+               */
+              dropdownToggle.addClass('show-special-title');
+              filterOption.empty();
+              return;
           }
-          if(isMultiple && viewValue.length === 0) {
-            dropdownToggle.addClass('show-special-title');
-            filterOption.empty();
+          if (isMultiple && viewValue.length === 0) {
+              dropdownToggle.addClass('show-special-title');
+              filterOption.empty();
           } else {
-            dropdownToggle.removeClass('show-special-title');
-            $timeout(function() {
+              dropdownToggle.removeClass('show-special-title');
+              $timeout(function () {
+                  var bsOptionElements = dropdownMenu.children(),
+                      value,
+                      nyaBsOption,
+                      index,
+                      length = bsOptionElements.length,
+                      optionTitle,
+                      selection = [],
+                      optionScopes = [],
+                      match,
+                      count,
+                      clone;
 
-              var bsOptionElements = dropdownMenu.children(),
-                value,
-                nyaBsOption,
-                index,
-                length = bsOptionElements.length,
-                optionTitle,
-                selection = [],
-                optionScopes = [],
-                match,
-                count,
-                clone;
+                  if (isMultiple && $attrs.selectedTextFormat === 'count') {
+                      count = 1;
+                  } else if (isMultiple && $attrs.selectedTextFormat && (match = $attrs.selectedTextFormat.match(/\s*count\s*>\s*(\d+)\s*/))) {
+                      count = parseInt(match[1], 10);
+                  }
 
-              if(isMultiple && $attrs.selectedTextFormat === 'count') {
-                count = 1;
-              } else if(isMultiple && $attrs.selectedTextFormat && (match = $attrs.selectedTextFormat.match(/\s*count\s*>\s*(\d+)\s*/))) {
-                count = parseInt(match[1], 10);
-              }
-
-              // data-selected-text-format="count" or data-selected-text-format="count>x"
-              if((typeof count !== 'undefined') && viewValue.length > count) {
-                filterOption.empty();
-                if(localizedText.numberItemSelectedTpl) {
-                  filterOption.append(jqLite(localizedText.numberItemSelectedTpl.replace('%d', viewValue.length)));
-                } else if(localizedText.numberItemSelected) {
-                  filterOption.append(document.createTextNode(localizedText.numberItemSelected.replace('%d', viewValue.length)));
-                } else {
-                  filterOption.append(document.createTextNode(viewValue.length + ' items selected'));
-                }
-                return;
-              }
-
-              // data-selected-text-format="values" or the number of selected items is less than count
-              for(index = 0; index < length; index++) {
-                nyaBsOption = bsOptionElements.eq(index);
-                if(nyaBsOption.hasClass('nya-bs-option')) {
-
-                  value = getOptionValue(nyaBsOption);
-
-                  if(isMultiple) {
-                    if(Array.isArray(viewValue) && contains(viewValue, value)) {
-                      // if option has an title attribute. use the title value as content show in button.
-                      // otherwise get very first child element.
-                      optionTitle = nyaBsOption.attr('title');
-                      if(optionTitle) {
-                        selection.push(document.createTextNode(optionTitle));
+                  // data-selected-text-format="count" or data-selected-text-format="count>x"
+                  if ((typeof count !== 'undefined') && viewValue.length > count) {
+                      filterOption.empty();
+                      if (localizedText.numberItemSelectedTpl) {
+                          filterOption.append(jqLite(localizedText.numberItemSelectedTpl.replace('%d', viewValue.length)));
+                      } else if (localizedText.numberItemSelected) {
+                          filterOption.append(document.createTextNode(localizedText.numberItemSelected.replace('%d', viewValue.length)));
                       } else {
-                        selection.push(getOptionText(nyaBsOption));
-                        optionScopes.push(nyaBsOption.data('isolateScope'))
+                          filterOption.append(document.createTextNode(viewValue.length + ' items selected'));
+                      }
+                      return;
+                  }
+
+                  // data-selected-text-format="values" or the number of selected items is less than count
+                  for (index = 0; index < length; index++) {
+                      nyaBsOption = bsOptionElements.eq(index);
+                      if (nyaBsOption.hasClass('nya-bs-option')) {
+                          value = getOptionValue(nyaBsOption);
+
+                          if (isMultiple) {
+                              if (Array.isArray(viewValue) && contains(viewValue, value)) {
+                                  // if option has an title attribute. use the title value as content show in button.
+                                  // otherwise get very first child element.
+                                  optionTitle = nyaBsOption.attr('title');
+                                  if (optionTitle) {
+                                      selection.push(document.createTextNode(optionTitle));
+                                  } else {
+                                      selection.push(getOptionText(nyaBsOption));
+                                      optionScopes.push(nyaBsOption.data('isolateScope'))
+                                  }
+                              }
+                          } else {
+                              if (deepEquals(viewValue, value)) {
+                                  optionTitle = nyaBsOption.attr('title');
+                                  if (optionTitle) {
+                                      selection.push(document.createTextNode(optionTitle));
+                                  } else {
+                                      selection.push(getOptionText(nyaBsOption));
+                                      optionScopes.push(nyaBsOption.data('isolateScope'))
+                                  }
+                              }
+                          }
+                      }
+                  }
+
+                  var selectionsText = [];
+                  var filterOptions = filterOption[0].innerText;
+                  var filterOptionsArray = filterOptions.split(", ");
+                  for (index = 0; index < selection.length; index++) {
+                      if (optionScopes[index]) {
+                          clone = $compile(selection[index])(optionScopes[index]);
+                      } else {
+                          clone = selection[index];
                       }
 
-                    }
-                  } else {
-                    if(deepEquals(viewValue, value)) {
-                      optionTitle = nyaBsOption.attr('title');
-                      if(optionTitle) {
-                        selection.push(document.createTextNode(optionTitle));
-                      } else {
-                        selection.push(getOptionText(nyaBsOption));
-                        optionScopes.push(nyaBsOption.data('isolateScope'))
+                      var cloneInnerText = clone[0].innerText.trim();
+                      selectionsText.push(cloneInnerText);
+
+                      if (filterOptionsArray.indexOf(cloneInnerText) === -1)
+                          filterOption[0].innerText += (filterOptions === "" ? "" : ", ") + cloneInnerText;
+                  }
+
+                  function isCurrentlyVisibleAndNotSelected(value) {
+                      var isVisible = false;
+                      for (index = 0; index < bsOptionElements.length; index++) {
+                          nyaBsOption = bsOptionElements.eq(index);
+
+                          var valuesAreEqual = nyaBsOption[0].innerText.trim() === value;
+                          if (nyaBsOption.hasClass("nya-bs-option")
+                              && nyaBsOption.hasClass("selected")
+                              && valuesAreEqual)
+                              return false;
+
+                          if (nyaBsOption.hasClass('nya-bs-option')
+                              && valuesAreEqual)
+                              isVisible = true;
                       }
-                    }
+
+                      return isVisible;
                   }
 
-                }
-              }
-
-              if(selection.length === 0) {
-                filterOption.empty();
-                dropdownToggle.addClass('show-special-title');
-              } else if(selection.length === 1) {
-                dropdownToggle.removeClass('show-special-title');
-                // either single or multiple selection will show the only selected content.
-                filterOption.empty();
-                // the isolateScope attribute may not set when we use the static version nya-bs-option class with data-value attribute.
-                if(optionScopes[0]) {
-                  clone = $compile (selection[0])(optionScopes[0]);
-                } else {
-                  clone = selection[0];
-                }
-                filterOption.append(clone);
-              } else {
-                dropdownToggle.removeClass('show-special-title');
-                filterOption.empty();
-                for(index = 0; index < selection.length; index++) {
-                  if(optionScopes[index]) {
-                    clone = $compile (selection[index])(optionScopes[index]);
-                  } else {
-                    clone = selection[index];
+                  for (var i = 0; i < filterOptionsArray.length; i++) {
+                      if (selectionsText.indexOf(filterOptionsArray[i]) === -1
+                          && isCurrentlyVisibleAndNotSelected(filterOptionsArray[i])) {
+                          filterOption[0].innerText = filterOption[0].innerText
+                              .replace(", " + filterOptionsArray[i], "")
+                              .replace(filterOptionsArray[i] + ", ", "");
+                          if (filterOptionsArray.length === 1)
+                              filterOption[0].innerText = filterOption[0].innerText
+                                  .replace(filterOptionsArray[i], "");
+                      }
                   }
-                  filterOption.append(clone);
-                  if(index < selection.length -1) {
-                    filterOption.append(document.createTextNode(', '));
-                  }
-                }
-              }
-
-            });
+              });
           }
-
-        }
+      }
 
         // will called only once.
         function calcMenuSize(){
