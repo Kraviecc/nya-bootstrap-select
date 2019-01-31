@@ -9,6 +9,10 @@ Require: angular 1.2+
 
 ### This project is currently in maintenance state, it will only accept bug fix Pull Request, will not accept any new feature.
 
+## Fork information:
+## Standard behaviour may be broken.
+### This version is optimized for multiselect and livesearch when you have huge dataset. Instead of using livesearch attribute you should implement your own input + filter inside ng-repeat. Thanks to that you can use limitTo to display only X number of records (this solves problem in >2000 rendered records in IE).
+
 ## Usage
 
 1. Install
