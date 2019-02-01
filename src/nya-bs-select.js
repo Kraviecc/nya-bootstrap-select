@@ -110,6 +110,10 @@ nyaBsSelect.directive('nyaBsSelect', ['$parse', '$document', '$timeout', '$compi
       length = options.length;
       for(index = 0; index < length; index++) {
         liElement = options.eq(index);
+        if (liElement.hasClass('bs-searchbox-custom')) {
+          dropdownContainer.append(liElement[index]);
+        }
+
         if(liElement.hasClass('nya-bs-option') || liElement.attr('nya-bs-option')) {
           liElement.find('a').attr('tabindex', '0');
           // In order to be compatible with old version, we should copy value of value attribute into data-value attribute.
